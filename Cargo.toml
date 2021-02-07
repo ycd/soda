@@ -1,0 +1,25 @@
+[package]
+authors = ["Yagiz Degirmenci <yagizcanilbey1903@gmail.com>"]
+edition = "2018"
+name = "soda"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4"
+fern = "0.5"
+log = "0.4"
+
+[lib]
+name = "soda"
+# "cdylib" is necessary to produce a shared library for Python to import from.
+#
+# Downstream Rust code (including code in `bin/`, `examples/`, and `tests/`) will not be able
+# to `use string_sum;` unless the "rlib" or "lib" crate type is also included, e.g.:
+# crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+features = ["extension-module"]
+version = "0.13.1"
