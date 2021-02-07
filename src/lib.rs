@@ -136,7 +136,7 @@ impl Soda {
         info!("{}", message);
     }
 
-    fn warn(&mut self, message: &PyUnicode) {
+    fn warning(&mut self, message: &PyUnicode) {
         let message = match message.to_str() {
             Ok(msg) => msg,
             _ => return,
