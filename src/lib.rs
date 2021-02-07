@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, fmt::format};
+use std::borrow::{Borrow, BorrowMut};
 
 use fern::Dispatch;
 use log::{debug, error, info, trace, warn};
@@ -24,18 +24,35 @@ pub enum Level {
     CRITICAL,
 }
 
+static dateFormat: &'static str = "[%Y-%m-%d][%H:%M:%S]";
+
 #[pyclass(dict, subclass)]
 pub struct Soda {
     pub level: Level,
+
     pub format: String,
-    // handlers: Vec<PyFunction>, TODO(ycd) support custom handlers
+    // pub verbosity: u64
+    // pub handlers: Vec<PyFunction>, TODO(ycd) support custom handlers
 }
 
 #[pymethods]
 impl Soda {
     #[new]
+    #[args(verbosity = "0")]
     fn new(verbosity: u64) -> Soda {
-        setup_logging(verbosity).expect("unable to setup config");
+        // Create at Python runtime to make this logger globally accessable.
+        let mut base_config = fern::Dispatch::new();
+        base_config = match verbosity {
+            0 => base_config
+                .level(log::LevelFilter::Info)
+                .level_for("overly-verbose-target", log::LevelFilter::Warn),
+            1 => base_config
+                .level(log::LevelFilter::Debug)
+                .level_for("overly-verbose-target", log::LevelFilter::Info),
+            2 => base_config.level(log::LevelFilter::Debug),
+            _3_or_more => base_config.level(log::LevelFilter::Trace),
+        };
+
         Soda {
             level: Level::NOTSET,
             format: String::new(),
@@ -48,6 +65,66 @@ impl Soda {
         if let Ok(format) = format {
             self.format = format.to_string();
         }
+    }
+
+    // #[args(path=dateFormat)]
+    /// Setup the configuration for the file
+    fn fileConfig(&mut self, path: &PyUnicode) {
+        let path: String = match path.to_str() {
+            Ok(p) => p.to_string(),
+            Err(e) => {
+                println!("An error occured while reading the path {}", e);
+                format!("{}.log", chrono::Utc::now().format("%Y-%m-%d:%H:%M:%S"))
+            }
+        };
+
+        let file_config = &fern::Dispatch::new()
+            .format(|out, message, record| {
+                out.finish(format_args!(
+                    "{}[{}][{}] {}",
+                    chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                    record.target(),
+                    record.level(),
+                    message
+                ))
+            })
+            .chain(fern::log_file(path).unwrap())
+            .apply();
+    }
+
+    fn basicConfig(&mut self, dtFormat: &PyUnicode) {
+        let dtFormat: String = match dtFormat.to_str() {
+            Ok(fmt) => fmt.to_string(),
+            Err(e) => {
+                println!(
+                    "An error occured while reading the format {}, using the default format",
+                    e
+                );
+                String::from(dateFormat)
+            }
+        };
+
+        let stdout_config = fern::Dispatch::new()
+            .format(move |out, message, record| {
+                // special format for debug messages coming from our own crate.
+                if record.level() > log::LevelFilter::Info && record.target() == "" {
+                    out.finish(format_args!(
+                        "---\nDEBUG: {}: {}\n---",
+                        chrono::Local::now().format(dtFormat.as_str()),
+                        message
+                    ))
+                } else {
+                    out.finish(format_args!(
+                        "[{}][{}][{}] {}",
+                        chrono::Local::now().format(dtFormat.as_str()),
+                        record.target(),
+                        record.level(),
+                        message
+                    ))
+                }
+            })
+            .chain(std::io::stdout())
+            .apply();
     }
 
     fn info(&self, message: &PyUnicode) {
