@@ -65,20 +65,18 @@ impl Soda {
     fn new(verbosity: u64) -> Soda {
         // Create at Python runtime to make this logger globally accessable.
         let mut base_config = fern::Dispatch::new();
+
         base_config = match verbosity {
-            0 => base_config
-                .level(log::LevelFilter::Info)
-                .level_for("overly-verbose-target", log::LevelFilter::Warn),
-            1 => base_config
-                .level(log::LevelFilter::Debug)
-                .level_for("overly-verbose-target", log::LevelFilter::Info),
-            2 => base_config.level(log::LevelFilter::Debug),
+            0 => base_config.level(log::LevelFilter::Info),
+            1 => base_config.level(log::LevelFilter::Debug),
+            2 => base_config.level(log::LevelFilter::Warn),
             _3_or_more => base_config.level(log::LevelFilter::Trace),
         };
 
         Soda {
             level: Level::NOTSET,
             format: String::new(),
+            handlers: Handlers::new(false, false),
         }
     }
 
@@ -88,31 +86,6 @@ impl Soda {
         if let Ok(format) = format {
             self.format = format.to_string();
         }
-    }
-
-    // #[args(path=dateFormat)]
-    /// Setup the configuration for the file
-    fn fileConfig(&mut self, path: &PyUnicode) {
-        let path: String = match path.to_str() {
-            Ok(p) => p.to_string(),
-            Err(e) => {
-                println!("An error occured while reading the path {}", e);
-                format!("{}.log", chrono::Utc::now().format("%Y-%m-%d:%H:%M:%S"))
-            }
-        };
-
-        let file_config = &fern::Dispatch::new()
-            .format(|out, message, record| {
-                out.finish(format_args!(
-                    "{}[{}][{}] {}",
-                    chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                    record.target(),
-                    record.level(),
-                    message
-                ))
-            })
-            .chain(fern::log_file(path).unwrap())
-            .apply();
     }
 
     fn basicConfig(&mut self, dtFormat: &PyUnicode) {
