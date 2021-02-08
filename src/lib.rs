@@ -123,17 +123,6 @@ impl Soda {
             .apply();
     }
 
-    fn info(&self, message: &PyUnicode) {
-        let message = match message.to_str() {
-            Ok(msg) => msg,
-            _ => return,
-        };
-
-        info!("{}", message);
-
-        self.callback(message);
-    }
-
     fn addFileHandler(&mut self, path: String) {
         let f = File::open(&path);
 
@@ -166,6 +155,17 @@ impl Soda {
         // };
     }
 
+    fn info(&self, message: &PyUnicode) {
+        let message = match message.to_str() {
+            Ok(msg) => msg,
+            _ => return,
+        };
+
+        info!("{}", message);
+
+        self.callback(message);
+    }
+
     fn warning(&mut self, message: &PyUnicode) {
         let message = match message.to_str() {
             Ok(msg) => msg,
@@ -182,6 +182,8 @@ impl Soda {
         };
 
         debug!("{}", message);
+
+        self.callback(message);
     }
 
     fn trace(&mut self, message: &PyUnicode) {
@@ -191,6 +193,8 @@ impl Soda {
         };
 
         trace!("{}", message);
+
+        self.callback(message);
     }
 
     fn error(&mut self, message: &PyUnicode) {
@@ -200,6 +204,8 @@ impl Soda {
         };
 
         error!("{}", message);
+
+        self.callback(message);
     }
 
     pub fn setLevel(&mut self, verbosity: u8) {
