@@ -130,6 +130,40 @@ impl Soda {
         };
 
         info!("{}", message);
+
+        self.callback(message);
+    }
+
+    fn addFileHandler(&mut self, path: String) {
+        let f = File::open(&path);
+
+        let _: File = match f {
+            Ok(file) => file,
+            Err(error) => match error.kind() {
+                ErrorKind::NotFound => match File::create(&path) {
+                    Ok(fc) => fc,
+                    Err(e) => panic!("Problem creating the file: {:?}", e),
+                },
+                _ => panic!("an error occured {}", error),
+            },
+        };
+
+        self.handlers.FileHandler.enabled = true;
+        self.handlers.FileHandler.path = path;
+    }
+
+    fn callback(&self, message: &str) {
+        match self.handlers.FileHandler.enabled {
+            true => self.handlers.FileHandler.logger(message),
+            false => (),
+        };
+
+        // TODO(ycd): enable json logging with extra crate.
+        // match self.handlers.JsonHandler {
+        //     // true => jsonLogger(message),
+        //     true => (),
+        //     false => (),
+        // };
     }
 
     fn warning(&mut self, message: &PyUnicode) {
