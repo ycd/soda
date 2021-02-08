@@ -202,21 +202,88 @@ impl Soda {
         error!("{}", message);
     }
 
-    pub fn setLevel(&mut self, level: &PyUnicode) {
-        let level: Result<&str, PyErr> = level.to_str();
-
-        match level {
-            Ok("DEBUG") => self.level = Level::DEBUG,
-            Ok("INFO") => self.level = Level::INFO,
-            Ok("WARNING") => self.level = Level::WARNING,
-            Err(err) => {
-                println!("An error occured {}", err);
-            }
+    pub fn setLevel(&mut self, verbosity: u8) {
+        match verbosity {
+            1 => self.level = Level::DEBUG,
+            2 => self.level = Level::INFO,
+            3 => self.level = Level::WARNING,
             _ => {
                 println!("Found none, setting default value to 'DEBUG'");
                 self.level = Level::DEBUG
             }
         }
+    }
+}
+
+// fn fileLogger(message: &str) {
+//     let mut file = OpenOptions::new()
+//         .write(true)
+//         .append(true)
+//         .open(&self.path)
+//         .unwrap();
+
+//     if let Err(e) = writeln!(file, "{}", self.format(message)) {
+//         eprintln!("Couldn't write to file: {}", e);
+//     }
+
+//     let f = File::open(&self.path);
+
+//     let f: File = match f {
+//         Ok(file) => file,
+//         Err(error) => match error.kind() {
+//             ErrorKind::NotFound => match File::create(&self.path) {
+//                 Ok(fc) => fc,
+//                 Err(e) => panic!("Problem creating the file: {:?}", e),
+//             },
+//             _ => panic!("an error occured {}", error),
+//         },
+//     };
+// }
+
+// trait Logger {
+//     fn logger(message: &str);
+// }
+
+struct FileLogger {
+    enabled: bool,
+    path: String,
+}
+
+impl FileLogger {
+    fn new() -> FileLogger {
+        FileLogger {
+            enabled: false,
+            path: String::from("default.log"),
+        }
+    }
+
+    fn logger(&self, message: &str) {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(&self.path)
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", message) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+
+        // let f = File::open(&self.path);
+
+        // let f: File = match f {
+        //     Ok(file) => file,
+        //     Err(error) => match error.kind() {
+        //         ErrorKind::NotFound => match File::create(&self.path) {
+        //             Ok(fc) => fc,
+        //             Err(e) => panic!("Problem creating the file: {:?}", e),
+        //         },
+        //         _ => panic!("an error occured {}", error),
+        //     },
+        // };
+    }
+
+    fn format(&self, message: &str) -> String {
+        format!("{}", message)
     }
 }
 
