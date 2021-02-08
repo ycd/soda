@@ -100,10 +100,10 @@ impl Soda {
             }
         };
 
-        let stdout_config = fern::Dispatch::new()
+        let mut config = fern::Dispatch::new()
             .format(move |out, message, record| {
                 // special format for debug messages coming from our own crate.
-                if record.level() > log::LevelFilter::Info && record.target() == "" {
+                if record.level() > log::LevelFilter::Info && record.target() == "soda" {
                     out.finish(format_args!(
                         "---\nDEBUG: {}: {}\n---",
                         chrono::Local::now().format(dtFormat.as_str()),
