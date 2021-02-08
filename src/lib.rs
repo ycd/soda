@@ -39,7 +39,23 @@ pub struct Soda {
 
     pub format: String,
     // pub verbosity: u64
-    // pub handlers: Vec<PyFunction>, TODO(ycd) support custom handlers
+    pub handlers: Handlers,
+}
+
+#[pyclass(dict, subclass)]
+pub struct Handlers {
+    FileHandler: FileLogger,
+}
+
+#[pymethods]
+impl Handlers {
+    #[new]
+    #[args(json = false, file = false)]
+    fn new(json: bool, file: bool) -> Handlers {
+        Handlers {
+            FileHandler: FileLogger::new(),
+        }
+    }
 }
 
 #[pymethods]
